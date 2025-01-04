@@ -69,6 +69,16 @@ fn explore(grid: &mut [Vec<char>], start: (usize, usize)) -> bool {
         let (nx, ny) = (nx as usize, ny as usize);
         if grid[nx][ny] == '#' {
             cur_move = cur_move.turn();
+            let (nx, ny) = cur_move.do_move(x, y);
+            if nx >= 0
+                && ny >= 0
+                && (nx as usize) < grid.len()
+                && (ny as usize) < grid[0].len()
+                && grid[nx as usize][ny as usize] == cur_move.into()
+            {
+                return true;
+            }
+
             grid[x][y] = cur_move.into();
         } else {
             steps += 1;
