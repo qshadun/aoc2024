@@ -16,3 +16,47 @@ pub fn print_grid(grid: &[Vec<char>]) {
     }
     println!();
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum Move {
+    Up = b'^',
+    Down = b'v',
+    Left = b'<',
+    Right = b'>',
+}
+
+impl From<Move> for char {
+    fn from(val: Move) -> Self {
+        val as u8 as char
+    }
+}
+impl Move {
+    pub fn from(c: char) -> Result<Move, char> {
+        match c {
+            '^' => Ok(Move::Up),
+            'v' => Ok(Move::Down),
+            '<' => Ok(Move::Left),
+            '>' => Ok(Move::Right),
+            _ => Err(c),
+        }
+    }
+
+    pub fn do_move(&self, x: usize, y: usize) -> (i32, i32) {
+        let (x, y) = (x as i32, y as i32);
+        match self {
+            Move::Up => (x - 1, y),
+            Move::Down => (x + 1, y),
+            Move::Left => (x, y - 1),
+            Move::Right => (x, y + 1),
+        }
+    }
+    pub fn turn(&self) -> Self {
+        match self {
+            Move::Up => Move::Right,
+            Move::Down => Move::Left,
+            Move::Left => Move::Up,
+            Move::Right => Move::Down,
+        }
+    }
+}
