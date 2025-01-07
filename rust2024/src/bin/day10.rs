@@ -1,7 +1,7 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::{collections::VecDeque, fs::read_to_string};
 
 fn main() {
-    let day = 11;
+    let day = 10;
     println!(
         "ans for part1 test: {}",
         part1(&format!("../input/day{}_test.txt", day))
@@ -20,64 +20,94 @@ fn main() {
     );
 }
 
-fn parse_input(input_file: &str) -> Vec<u128> {
+fn parse_input(input_file: &str) -> Vec<Vec<u8>> {
     let s = read_to_string(input_file).unwrap();
     let mut ans = vec![];
-    for p in s.split(' ') {
-        ans.push(p.parse().unwrap());
+    for line in s.lines() {
+        let row: Vec<u8> = line.chars().map(|c| c as u8 - b'0').collect();
+        ans.push(row);
     }
     ans
 }
 
-fn blink(nums: &[u128]) -> Vec<u128> {
-    let mut ans = vec![];
-    for num in nums {
-        if num == &0 {
-            ans.push(1);
-        } else {
-            let s = format!("{}", num);
-            if s.len() % 2 == 0 {
-                let s1 = &s[..s.len() / 2];
-                let s2 = &s[s.len() / 2..];
-                ans.push(s1.parse().unwrap());
-                ans.push(s2.parse().unwrap());
-            } else {
-                ans.push(num * 2024);
+const DELTAS: [[i32; 2]; 4] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+fn calc_score(start_x: usize, start_y: usize, grid: &[Vec<u8>]) -> i32 {
+    let mut ans = 0;
+    let m = grid.len();
+    let n = grid[0].len();
+    let mut q: VecDeque<(usize, usize)> = VecDeque::new();
+    q.push_back((start_x, start_y));
+    let mut visited = vec![vec![0_u8; n]; m];
+    visited[start_x][start_y] = 1;
+    while !q.is_empty() {
+        let (x, y) = q.pop_front().unwrap();
+        if grid[x][y] == 9 {
+            ans += 1;
+            continue;
+        }
+        for [dx, dy] in DELTAS {
+            let nx = x as i32 + dx;
+            let ny = y as i32 + dy;
+            if nx >= 0 && (nx as usize) < m && ny >= 0 && (ny as usize) < n {
+                let nx = nx as usize;
+                let ny = ny as usize;
+                if grid[nx][ny] == grid[x][y] + 1 && visited[nx][ny] != 1 {
+                    visited[nx][ny] = 1;
+                    q.push_back((nx, ny));
+                }
             }
         }
     }
     ans
 }
 
-fn dfs(num: u128, times: u8, memo: &mut HashMap<(u128, u8), u128>) -> u128 {
-    if times == 0 {
-        return 1;
-    }
-    if let Some(ans) = memo.get(&(num, times)) {
-        return *ans;
-    }
+fn part1(input_file: &str) -> i32 {
+    let grid = parse_input(input_file);
     let mut ans = 0;
-    for x in blink(&[num]) {
-        ans += dfs(x, times - 1, memo);
+    for i in 0..grid.len() {
+        for j in 0..grid[0].len() {
+            if grid[i][j] == 0 {
+                ans += calc_score(i, j, &grid);
+            }
+        }
     }
-    memo.insert((num, times), ans);
     ans
 }
 
-fn part1(input_file: &str) -> usize {
-    let mut nums = parse_input(input_file);
-    for _ in 0..25 {
-        nums = blink(&nums);
+fn dfs(x: usize, y: usize, grid: &Vec<Vec<u8>>, memo: &mut Vec<Vec<i32>>) -> i32 {
+    if grid[x][y] == 9 {
+        return 1;
     }
-    nums.len()
+    if memo[x][y] != -1 {
+        return memo[x][y];
+    }
+    let mut ans = 0;
+    for [dx, dy] in DELTAS {
+        let nx = x as i32 + dx;
+        let ny = y as i32 + dy;
+        if nx >= 0 && (nx as usize) < grid.len() && ny >= 0 && (ny as usize) < grid[0].len() {
+            let nx = nx as usize;
+            let ny = ny as usize;
+            if grid[nx][ny] == grid[x][y] + 1 {
+                ans += dfs(nx, ny, grid, memo);
+            }
+        }
+    }
+    memo[x][y] = ans;
+    ans
 }
 
-fn part2(input_file: &str) -> u128 {
-    let nums = parse_input(input_file);
+fn part2(input_file: &str) -> i32 {
+    let grid = parse_input(input_file);
     let mut ans = 0;
-    let mut memo = HashMap::new();
-    for num in nums {
-        ans += dfs(num, 75, &mut memo);
+    let mut memo = vec![vec![-1; grid[0].len()]; grid.len()];
+    for i in 0..grid.len() {
+        for j in 0..grid[0].len() {
+            if grid[i][j] == 0 {
+                ans += dfs(i, j, &grid, &mut memo);
+            }
+        }
     }
     ans
 }
