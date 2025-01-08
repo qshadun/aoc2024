@@ -59,6 +59,16 @@ impl Move {
             Move::Right => Move::Down,
         }
     }
+
+    pub fn reverse_move(&self, x: usize, y: usize) -> (i32, i32) {
+        let (x, y) = (x as i32, y as i32);
+        match self {
+            Move::Up => (x + 1, y),
+            Move::Down => (x - 1, y),
+            Move::Left => (x, y + 1),
+            Move::Right => (x, y - 1),
+        }
+    }
 }
 
 pub const DELTAS: [[i32; 2]; 4] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
