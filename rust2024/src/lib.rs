@@ -17,7 +17,7 @@ pub fn print_grid(grid: &[Vec<char>]) {
     println!();
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Move {
     Up = b'^',
@@ -67,6 +67,15 @@ impl Move {
             Move::Down => (x - 1, y),
             Move::Left => (x, y + 1),
             Move::Right => (x, y - 1),
+        }
+    }
+
+    pub fn reverse_turn(&self) -> Self {
+        match self {
+            Move::Up => Move::Left,
+            Move::Down => Move::Right,
+            Move::Left => Move::Down,
+            Move::Right => Move::Up,
         }
     }
 }
