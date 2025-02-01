@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fmt::Write, fs::read_to_string};
 
 pub fn read_grid(input_file: &str) -> Vec<Vec<char>> {
     let mut ans = vec![];
@@ -31,6 +31,13 @@ impl From<Move> for char {
         val as u8 as char
     }
 }
+
+impl std::fmt::Display for Move {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char(*self as u8 as char)
+    }
+}
+
 impl Move {
     pub fn from(c: char) -> Result<Move, char> {
         match c {
@@ -77,6 +84,10 @@ impl Move {
             Move::Left => Move::Down,
             Move::Right => Move::Up,
         }
+    }
+
+    pub fn moves() -> [Move; 4] {
+        [Move::Up, Move::Down, Move::Left, Move::Right]
     }
 }
 
