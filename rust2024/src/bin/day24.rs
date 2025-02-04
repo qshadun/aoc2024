@@ -2,6 +2,7 @@
 use std::{
     collections::{HashMap, HashSet},
     fs::read_to_string,
+    time::Instant,
 };
 
 fn main() {
@@ -18,9 +19,11 @@ fn main() {
         "ans for part2 test: {}",
         part2(&format!("../input/day{}_test.txt", day))
     );
+    let now = Instant::now();
     println!(
-        "ans for part2: {}",
-        part2(&format!("../input/day{}.txt", day))
+        "ans for part2: {}, time used: {} ms",
+        part2(&format!("../input/day{}.txt", day)),
+        now.elapsed().as_millis()
     );
 }
 type Gate<'a> = [&'a str; 4];
@@ -80,12 +83,8 @@ fn part1(input_file: &str) -> i64 {
     ans
 }
 
-fn to_node(prefix: &str, i: usize) -> String {
-    if i < 10 {
-        format!("{prefix}0{i}")
-    } else {
-        format!("{prefix}{i}")
-    }
+fn to_node(prefix: char, i: usize, node_names: &HashMap<(char, usize), String>) -> &str {
+    node_names.get(&(prefix, i)).unwrap()
 }
 
 fn get_res<'a>(
@@ -100,7 +99,10 @@ fn get_res<'a>(
     }
 }
 
-fn furthest_made(gates: &[Gate]) -> (usize, HashSet<String>) {
+fn furthest_made(
+    gates: &[Gate],
+    node_names: &HashMap<(char, usize), String>,
+) -> (usize, HashSet<String>) {
     let mut ops: HashMap<(&str, &str, &str), &str> = HashMap::new();
     for &[a, op, b, c] in gates {
         ops.insert((a, b, op), c);
@@ -110,16 +112,26 @@ fn furthest_made(gates: &[Gate]) -> (usize, HashSet<String>) {
     let mut prev_intermediates: Vec<&str> = vec![];
 
     for i in 0..45usize {
-        let pre_digit =
-            get_res(&to_node("x", i), &to_node("y", i), "XOR", &ops).unwrap_or_default();
-        let pre_carry1 =
-            get_res(&to_node("x", i), &to_node("y", i), "AND", &ops).unwrap_or_default();
+        let pre_digit = get_res(
+            to_node('x', i, node_names),
+            to_node('y', i, node_names),
+            "XOR",
+            &ops,
+        )
+        .unwrap_or_default();
+        let pre_carry1 = get_res(
+            to_node('x', i, node_names),
+            to_node('y', i, node_names),
+            "AND",
+            &ops,
+        )
+        .unwrap_or_default();
         if i == 0 {
             carries[i] = pre_carry1;
             continue;
         }
         let digit = get_res(carries[i - 1], pre_digit, "XOR", &ops);
-        if digit.is_none() || digit.unwrap() != to_node("z", i) {
+        if digit.is_none() || digit.unwrap() != to_node('z', i, node_names) {
             return (i - 1, correct);
         }
         correct.insert(carries[i - 1].to_string());
@@ -140,7 +152,18 @@ use itertools::Itertools;
 fn part2(input_file: &str) -> String {
     let (_, mut gates) = parse_input(input_file);
     let mut swaps: Vec<&str> = vec![];
-    let (mut base, mut base_used) = furthest_made(&gates);
+    let mut node_names: HashMap<(char, usize), String> = HashMap::new();
+    for i in 0..45usize {
+        for prefix in ['x', 'y', 'z'] {
+            let name = if i < 10 {
+                format!("{prefix}0{i}")
+            } else {
+                format!("{prefix}{i}")
+            };
+            node_names.insert((prefix, i), name);
+        }
+    }
+    let (mut base, mut base_used) = furthest_made(&gates, &node_names);
     for _ in 0..4 {
         for combo in (0..gates.len()).combinations(2) {
             let i = combo[0];
@@ -155,7 +178,7 @@ fn part2(input_file: &str) -> String {
             }
             gates[i] = [a_i, op_i, b_i, c_j];
             gates[j] = [a_j, op_j, b_j, c_i];
-            let (attempt, attemp_used) = furthest_made(&gates);
+            let (attempt, attemp_used) = furthest_made(&gates, &node_names);
             if attempt > base {
                 println!(
                     "Found a good swap ({},{}). Got to a higher iteration number: {}",
